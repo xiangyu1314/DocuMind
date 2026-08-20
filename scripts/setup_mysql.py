@@ -62,8 +62,34 @@ def main() -> None:
                     ("保温杯", "日用品", 59.90, 200),
                 ],
             )
+            # 阶段⑤：会话 + 消息表（用 IF NOT EXISTS，重跑不丢用户历史）
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sessions (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    title      VARCHAR(255) NOT NULL DEFAULT '新会话',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                 ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS messages (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    session_id INT NOT NULL,
+                    role       VARCHAR(16) NOT NULL,
+                    content    TEXT NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    KEY idx_session (session_id),
+                    CONSTRAINT fk_messages_session FOREIGN KEY (session_id)
+                        REFERENCES sessions (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                """
+            )
         conn.commit()
-        print(f"数据库 {MYSQL_DB} 就绪：products 表已建，插入 8 行演示数据。")
+        print(f"数据库 {MYSQL_DB} 就绪：products（演示数据）+ sessions/messages（会话管理）表已建。")
     finally:
         conn.close()
 
