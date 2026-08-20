@@ -1,0 +1,20 @@
+# 密钥与本地配置（绝不提交）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+
+# Qdrant 本地向量索引（生成物，可随时重建）
+qdrant_data/
+
+# 用户上传的原始文档（示例文档 data/考勤制度.md 会提交，其余按需忽略）
+# data/uploads/

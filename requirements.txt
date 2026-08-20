@@ -1,0 +1,13 @@
+# 知枢 (DocuMind) 依赖清单
+# 阶段① 已装：openai / python-dotenv / fastapi / gradio / pymysql
+
+openai>=1.40
+python-dotenv
+fastapi
+uvicorn[standard]
+gradio
+pymysql
+
+# ---- 阶段③ RAG 需要（安装时取消注释）----
+# qdrant-client
+# sentence-transformers
