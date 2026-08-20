@@ -6,6 +6,8 @@
 
 这就是 ReAct（推理 + 行动）循环的雏形：观察 -> 行动 -> 观察 -> ... -> 回答。
 """
+from typing import Optional
+
 from app.llm import client
 from app.tools import TOOLS, execute_tool
 
@@ -19,15 +21,21 @@ DEFAULT_SYSTEM_PROMPT = (
 )
 
 
-def run_agent(user_msg: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT, verbose: bool = False) -> str:
+def run_agent(
+    user_msg: str,
+    system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+    verbose: bool = False,
+    history: Optional[list] = None,
+) -> str:
     """一轮 Agent 循环：用户提问 ->（可能多次）调用工具 -> 最终回答。
 
     verbose=True 时打印每一步工具调用的细节，便于观察中间过程。
+    history 传入之前的对话（[{"role":..., "content":...}, ...]）以支持多轮。
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_msg},
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_msg})
 
     for _ in range(MAX_ROUNDS):
         # 每轮都带 tools 一起发：让模型决定「直接回答」还是「喊工具」
@@ -56,17 +64,22 @@ def run_agent(user_msg: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT, verbose
     return "达到最大工具调用轮数，仍未得到最终答案。"
 
 
-def run_agent_stream(user_msg: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT):
+def run_agent_stream(
+    user_msg: str,
+    system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+    history: Optional[list] = None,
+):
     """run_agent 的流式版：逐 token yield 最终答案，工具调用过程不产出文本。
 
     与 run_agent 同一套逻辑，区别是每轮都走流式：
     - 工具调用轮：只收到 tool_calls 分片（无文本），执行后继续下一轮；
     - 最终回答轮：收到 delta.content，逐个 token yield 出去。
+    history 传入之前的对话以支持多轮。
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_msg},
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_msg})
 
     for _ in range(MAX_ROUNDS):
         stream = client.stream(messages, tools=TOOLS)
