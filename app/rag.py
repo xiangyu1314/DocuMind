@@ -102,6 +102,21 @@ def index_document(doc_id: str, text: str, source: str = "") -> int:
     return len(points)
 
 
+def index_file(path) -> int:
+    """解析任意支持格式的文件并入库（解析 -> 切块 -> 向量化 -> 写入），返回块数。
+
+    与 index_document 的区别：index_document 吃「纯文本」，这里吃「文件路径」，
+    内部先调 app.parser.parse_file 把 .md/.txt/.docx/.pdf 抽成文本。
+    """
+    from app.parser import parse_file  # 懒导入：不传文件的场景不加载解析库
+
+    p = Path(path)
+    text = parse_file(p)
+    if not text.strip():
+        return 0
+    return index_document(doc_id=p.stem, text=text, source=p.name)
+
+
 def retrieve(query: str, top_k: int = 3) -> list[dict]:
     """提问 -> 向量化 -> Qdrant 检索最相似的 top_k 块。"""
     ensure_collection()
